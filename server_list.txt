@@ -1,0 +1,3 @@
+# Comment starts with '#'.
+# Please fill in your server's IP.
+127.0.0.1
