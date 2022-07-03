@@ -44,8 +44,12 @@ class Game:
 
     def __init__(self) -> None:
         pygame.init()
+
+        # from cursor import cursor_zero, cursor_zero_surface
+        # pygame.mouse.set_cursor(cursor_zero)
+
         pygame.display.set_caption("Real-time Chilmok, or Omok")  # 창 제목 설정
-        self.displaysurf = pygame.display.set_mode((875, 875))
+        self.displaysurf = pygame.display.set_mode((875, 1075))
         self.clock = pygame.time.Clock()
         self.background = pygame.image.load("board-PIL.png")
         self.dotum = pygame.font.SysFont("dotum", 30)
@@ -63,8 +67,20 @@ class Game:
         mouse_over_shadow.fill((255, 255, 255, 0))  # RGBA : totally transparent
         mouse_over_shadow.set_alpha(128)
         while True:
-            self.displaysurf.blit(self.background, (0, 0))
+            # 고정된 그림: 백 점수판, 배경, 흑 점수판
+            pygame.draw.rect(
+                self.displaysurf,
+                Color.BLACK.value,
+                [(0, 0), (875, 100)]
+            )
+            self.displaysurf.blit(self.background, (0, 100))
+            pygame.draw.rect(
+                self.displaysurf,
+                Color.WHITE.value,
+                [(0, 975), (875, 100)]
+            )
 
+            # 마우스 이벤트
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
@@ -112,10 +128,12 @@ class Game:
             black_5, white_5 = self.board.count_5_connected()
             black_score = self.dotum.render(f"{black_5}/3", True, (0, 0, 0))
             white_score = self.dotum.render(f"{white_5}/3", True, (255, 255, 255))
-            self.displaysurf.blit(self.black_heuk, (75, 810))
+            self.displaysurf.blit(self.black_heuk, (75, 1010))
             self.displaysurf.blit(self.white_baek, (700, 35))
-            self.displaysurf.blit(black_score, (125, 810))
+            self.displaysurf.blit(black_score, (125, 1010))
             self.displaysurf.blit(white_score, (750, 35))
+            # from cursor import cursor_zero, cursor_zero_surface
+            # self.displaysurf.blit(cursor_zero_surface, (200, 200))
 
             # 게이지 표시
             if self.black_gauge < 3:
@@ -136,15 +154,30 @@ class Game:
             self.clock.tick(Game.FPS)
 
     def draw_gauge(self):
-        pygame.draw.rect(
-            self.displaysurf,
-            (0, 0, 0),
-            (220, 810, self.black_gauge * 80, 30)
-        )
+        # 기본 돌 3개
+        for i in range(3):
+            pygame.draw.circle(
+                self.displaysurf,
+                (0, 0, 0),
+                (250 + 40*i, 1025),
+                20
+            )
+            pygame.draw.circle(
+                self.displaysurf,
+                (255, 255, 255),
+                (400 + 40*i, 50),
+                20
+            )
+        # 가리개를 통해 원의 일부를 가려서 활꼴을 그린다
         pygame.draw.rect(
             self.displaysurf,
             (255, 255, 255),
-            (400, 35, self.white_gauge * 80, 30)
+            (230 + self.black_gauge * 40, 1000, (3.0 - self.black_gauge) * 40 + 10, 50)
+        )
+        pygame.draw.rect(
+            self.displaysurf,
+            (0, 0, 0),
+            (380 + self.white_gauge * 40, 25, (3.0 - self.white_gauge) * 40 + 10, 50)
         )
 
 
@@ -193,7 +226,7 @@ class Space:
 
     @property
     def rect(self) -> Rect:
-        return pygame.Rect(56 + 51 * self.x, 56 + 51 * self.y, 51, 51)
+        return pygame.Rect(56 + 51 * self.x, 156 + 51 * self.y, 51, 51)
 
     @property
     def state(self) -> State:

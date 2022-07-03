@@ -50,7 +50,7 @@ class StoneIdleAnimation(Animation):
             self.parent.board.game.displaysurf,
             self.parent.team.color(),
             self.parent.rect.center,
-            17, 0
+            17
         )
         # return gfxdraw.filled_circle(
         #     self.parent.board.game.displaysurf,
@@ -109,5 +109,5 @@ class StoneDeployedAnimation(Animation):
             self.parent.board.game.displaysurf,
             self.parent.team.color(),
             self.parent.rect.center,
-            17, 0
+            17
         )
