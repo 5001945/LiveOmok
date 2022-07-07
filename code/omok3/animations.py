@@ -1,13 +1,12 @@
 from math import pi, floor
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pygame
 from pygame.locals import *
 from pygame import gfxdraw
 
 if TYPE_CHECKING:
-    from omok3 import *
+    from .omok3 import *
 
 
 class Animation:

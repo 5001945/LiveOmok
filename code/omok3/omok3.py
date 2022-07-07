@@ -1,10 +1,15 @@
 import sys
+import os.path
 from enum import Enum
+from typing import TYPE_CHECKING, Optional, Union
 
 import pygame
 from pygame.locals import *
 
-from animations import SpaceAnimation, StoneDeployedAnimation, StoneIdleAnimation, StoneReservedAnimation
+from .animations import SpaceAnimation, StoneDeployedAnimation, StoneIdleAnimation, StoneReservedAnimation
+
+if TYPE_CHECKING:
+    from ..network.client_udp import OmokUDP
 
 
 class Color(Enum):
@@ -42,16 +47,27 @@ class State(Enum):
 class Game:
     FPS = 60
 
-    def __init__(self) -> None:
+    def __init__(self, multiplay=False, udp: 'OmokUDP' = None) -> None:
+        self.multiplay = multiplay
+        if self.multiplay:
+            self.udp = udp
+            self.udp.rx_event = lambda data: self.decode_udp_and_update(data)
+            self.udp.start_listen()
+            self.opponent_move: tuple[bool, tuple[int, int]] = (False, (0, 0))
+            self.opponent_chat: str = ""
+            self.encode_udp_and_send("Hello!")
+            
         pygame.init()
+        self.clock = pygame.time.Clock()
 
         # from cursor import cursor_zero, cursor_zero_surface
         # pygame.mouse.set_cursor(cursor_zero)
 
-        pygame.display.set_caption("Real-time Chilmok, or Omok")  # 창 제목 설정
+        pygame.display.set_caption("Real-time Omok3")  # 창 제목 설정
         self.displaysurf = pygame.display.set_mode((875, 1075))
-        self.clock = pygame.time.Clock()
-        self.background = pygame.image.load("board-PIL.png")
+        root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # RealtimeOmok/
+        img_path = os.path.join(root, "res", "board-PIL.png")  # RealtimeOmok/res/board-PIL.png
+        self.background = pygame.image.load(img_path)
         self.dotum = pygame.font.SysFont("dotum", 30)
         self.black_heuk = self.dotum.render("흑", True, (0, 0, 0))
         self.white_baek = self.dotum.render("백", True, (255, 255, 255))
@@ -61,6 +77,7 @@ class Game:
         self.white_gauge = 0.0
 
         self.displaysurf.blit(self.background, (0, 0))
+
 
     def loop(self):
         mouse_over_shadow = pygame.Surface((51, 51), pygame.SRCALPHA)
@@ -84,43 +101,36 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
-                    target: Space = None
-                    for row in self.board.spaces:
-                        for space in row:
-                            if space.rect.inflate(-10, -10).collidepoint(pos):
-                                # print(space)
-                                target = space
-                                break
-                        if target is not None:
-                            break
+                    target = self.find_mouse_pointed_space(pos)
                     if target is not None:
                         pressed = pygame.mouse.get_pressed()
                         if pressed[0]:  # 좌클릭
                             target.click(Team.BLACK)
-                        elif pressed[2]:  # 우클릭
+                            if self.multiplay:
+                                self.encode_udp_and_send(pos)
+                        elif pressed[2] and not self.multiplay:  # 우클릭 (로컬 플레이에서만)
                             target.click(Team.WHITE)
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
             
+            # UDP 이벤트(넷 플레이에서만)
+            if self.multiplay:
+                if self.opponent_move[0] is True:
+                    target = self.find_mouse_pointed_space(self.opponent_move[1])
+                    if target is not None:
+                        target.click(Team.WHITE)
+            
             # 마우스 hover 시 그림자 표시
             pos = pygame.mouse.get_pos()
-            target: Space = None
-            for row in self.board.spaces:
-                for space in row:
-                    if space.rect.inflate(-10, -10).collidepoint(pos):  # Taxi distance
-                    # if pygame.Vector2(space.rect.center).distance_to(pos) < 25:  # Euclidean distance
-                        target = space
-                        break
-                if target is not None:
-                    break
+            target = self.find_mouse_pointed_space(pos)
             if target is not None:
                 if target.state == State.EMPTY:
                     pygame.draw.circle(
                         mouse_over_shadow,
                         (127, 127, 127),
                         mouse_over_shadow.get_rect().center,
-                        17, 0
+                        17
                     )
                     self.displaysurf.blit(mouse_over_shadow, target.rect.topleft)
 
@@ -137,9 +147,9 @@ class Game:
 
             # 게이지 표시
             if self.black_gauge < 3:
-                self.black_gauge += 1/240
+                self.black_gauge += 1/180  # 3초에 하나씩 채워진다
             if self.white_gauge < 3:
-                self.white_gauge += 1/240
+                self.white_gauge += 1/180
             self.draw_gauge()
 
             if black_5 >= 3:
@@ -153,9 +163,10 @@ class Game:
             pygame.display.update()
             self.clock.tick(Game.FPS)
 
+
     def draw_gauge(self):
-        # 기본 돌 3개
-        for i in range(3):
+        # 기본 돌 3개 (새치기 시 돌려받는 걸 대비해 3개 더 그린다)
+        for i in range(6):
             pygame.draw.circle(
                 self.displaysurf,
                 (0, 0, 0),
@@ -172,16 +183,51 @@ class Game:
         pygame.draw.rect(
             self.displaysurf,
             (255, 255, 255),
-            (230 + self.black_gauge * 40, 1000, (3.0 - self.black_gauge) * 40 + 10, 50)
+            (230 + self.black_gauge * 40, 1000, (3.0 - self.black_gauge) * 40 + 130, 50)
         )
         pygame.draw.rect(
             self.displaysurf,
             (0, 0, 0),
-            (380 + self.white_gauge * 40, 25, (3.0 - self.white_gauge) * 40 + 10, 50)
+            (380 + self.white_gauge * 40, 25, (3.0 - self.white_gauge) * 40 + 130, 50)
         )
 
 
+    def decode_udp_and_update(self, msg: str) -> None:
+        if msg.startswith("Move:"):
+            # msg에는 Move 헤더와 클릭한 좌표가 들어온다. "Move:530,230"
+            msg = msg[5:]
+            x, y, *other = msg.split(',')
+            if other:  # 좌표가 3개 이상
+                return
+            self.opponent_move = (True, (int(x), int(y)))
+
+        elif msg.startswith("Chat:"):
+            # msg에는 Chat 헤더와 채팅 내용이 들어온다. "Chat:Ez LOL"
+            self.opponent_chat = msg[5:]
+            print(self.opponent_chat)
+
+    def encode_udp_and_send(self, pos_or_msg: Union[tuple[int, int], str]) -> None:
+        if isinstance(pos_or_msg, tuple):
+            self.udp.send(f"Move:{pos_or_msg[0]},{pos_or_msg[1]}")
+        elif isinstance(pos_or_msg, str):
+            self.udp.send(f"Chat:{pos_or_msg}")
+
+
+    def find_mouse_pointed_space(self, pos: tuple[int, int]) -> Optional['Space']:
+        target: Space = None
+        for row in self.board.spaces:
+            for space in row:
+                if space.rect.inflate(-10, -10).collidepoint(pos):  # Taxi distance
+                # if pygame.Vector2(space.rect.center).distance_to(pos) < 25:  # Euclidean distance
+                    target = space
+                    break
+            if target is not None:
+                break
+        return target
+
+
 class Board:
+
     def __init__(self, game: Game) -> None:
         self.game = game
         self.spaces = [[Space(self, j, i) for j in range(15)] for i in range(15)]
@@ -210,6 +256,7 @@ class Board:
 
 
 class Space:
+    
     def __init__(self, board: Board, x, y) -> None:
         self.board = board
         self.x = x  # 0-14
@@ -247,6 +294,7 @@ class Space:
             else:
                 raise ValueError()
 
+
     def click(self, team: Team):
         if self.state == State.EMPTY:
             if team == Team.BLACK:
@@ -271,7 +319,8 @@ class Space:
                         self.team = team
                         self.animation = StoneDeployedAnimation(self)
                         self.board.game.white_gauge -= 1.5
-                        self.board.game.black_gauge = min(3.0, self.board.game.black_gauge + 1.0)
+                        # self.board.game.black_gauge = min(3.0, self.board.game.black_gauge + 1.0)
+                        self.board.game.black_gauge += 1.0
 
         elif self.state == State.WHITE_RESERVED:
             if team == Team.WHITE:  # 백 확정
@@ -284,7 +333,9 @@ class Space:
                         self.team = team
                         self.animation = StoneDeployedAnimation(self)
                         self.board.game.black_gauge -= 1.5
-                        self.board.game.white_gauge = min(3.0, self.board.game.white_gauge + 1.0)
+                        # self.board.game.white_gauge = min(3.0, self.board.game.white_gauge + 1.0)
+                        self.board.game.white_gauge += 1.0
+
 
     def is_horizontal_5(self) -> Team:
         if not 2 <= self.x <= 12:

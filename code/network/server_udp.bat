@@ -1,0 +1,1 @@
+CALL python .\server_udp.py
