@@ -45,7 +45,10 @@ try:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         pos = pygame.mouse.get_pos()
                         if self.singleplay_btn.collidepoint(pos):
-                            self.do_singleplay()
+                            # self.do_singleplay()
+                            print("현재는 싱글플레이를 임시로 비활성화한 상태입니다.")
+                            pygame.quit()
+                            sys.exit()
                         elif self.multiplay_btn.collidepoint(pos):
                             self.do_multiplay()
                     if event.type == pygame.QUIT:

@@ -62,6 +62,7 @@ class Game:
 
         # from cursor import cursor_zero, cursor_zero_surface
         # pygame.mouse.set_cursor(cursor_zero)
+        self.mouse_clicking = False
 
         pygame.display.set_caption("Real-time Omok3")  # 창 제목 설정
         self.displaysurf = pygame.display.set_mode((875, 1075))
@@ -99,17 +100,23 @@ class Game:
 
             # 마우스 이벤트
             for event in pygame.event.get():
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                left_clicked = pygame.mouse.get_pressed()[0]
+                if event.type == pygame.MOUSEBUTTONDOWN and left_clicked:
+                    if self.mouse_clicking:  # mouse holding
+                        continue
+                    self.mouse_clicking = True
                     pos = pygame.mouse.get_pos()
                     target = self.find_mouse_pointed_space(pos)
                     if target is not None:
-                        pressed = pygame.mouse.get_pressed()
-                        if pressed[0]:  # 좌클릭
-                            target.click(Team.BLACK)
-                            if self.multiplay:
-                                self.encode_udp_and_send(pos)
-                        elif pressed[2] and not self.multiplay:  # 우클릭 (로컬 플레이에서만)
-                            target.click(Team.WHITE)
+                        # pressed = pygame.mouse.get_pressed()
+                        # if pressed[0]:  # 좌클릭
+                        target.click(Team.BLACK)
+                        if self.multiplay:
+                            self.encode_udp_and_send(pos)
+                        # elif pressed[2] and not self.multiplay:  # 우클릭 (로컬 플레이에서만)  # 로컬 플레이 잠시 비활성화
+                        #     target.click(Team.WHITE)
+                elif event.type == pygame.MOUSEBUTTONUP and not left_clicked:
+                    self.mouse_clicking = False
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
@@ -120,6 +127,7 @@ class Game:
                     target = self.find_mouse_pointed_space(self.opponent_move[1])
                     if target is not None:
                         target.click(Team.WHITE)
+                    self.opponent_move = (False, (0, 0))
             
             # 마우스 hover 시 그림자 표시
             pos = pygame.mouse.get_pos()
@@ -193,6 +201,7 @@ class Game:
 
 
     def decode_udp_and_update(self, msg: str) -> None:
+        print(msg)
         if msg.startswith("Move:"):
             # msg에는 Move 헤더와 클릭한 좌표가 들어온다. "Move:530,230"
             msg = msg[5:]
