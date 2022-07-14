@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional, Union
 
 import pygame
+from pygame import gfxdraw
 from pygame.locals import *
 
 from .animations import SpaceAnimation, StoneDeployedAnimation, StoneIdleAnimation, StoneReservedAnimation
@@ -59,17 +60,17 @@ class Game:
             
         pygame.init()
         self.clock = pygame.time.Clock()
-
-        # from cursor import cursor_zero, cursor_zero_surface
-        # pygame.mouse.set_cursor(cursor_zero)
+        
+        pygame.mouse.set_visible(False)
         self.mouse_clicking = False
 
         pygame.display.set_caption("Real-time Omok3")  # 창 제목 설정
         self.displaysurf = pygame.display.set_mode((875, 1075))
         root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # RealtimeOmok/
-        img_path = os.path.join(root, "res", "board-PIL.png")  # RealtimeOmok/res/board-PIL.png
+        img_path = os.path.join(root, "res", "board-PIL-step.png")  # RealtimeOmok/res/board-PIL-step.png
         self.background = pygame.image.load(img_path)
-        self.dotum = pygame.font.SysFont("dotum", 30)
+        self.dotum = pygame.font.SysFont("malgun gothic", 30)
+        # self.dotum = pygame.font.SysFont("dotumche", 30)
         self.black_heuk = self.dotum.render("흑", True, (0, 0, 0))
         self.white_baek = self.dotum.render("백", True, (255, 255, 255))
 
@@ -80,10 +81,12 @@ class Game:
         self.displaysurf.blit(self.background, (0, 0))
 
 
-    def loop(self):
+    def loop(self) -> str:
         mouse_over_shadow = pygame.Surface((51, 51), pygame.SRCALPHA)
         mouse_over_shadow.fill((255, 255, 255, 0))  # RGBA : totally transparent
         mouse_over_shadow.set_alpha(128)
+        cursor_with_gauge = pygame.Surface((41, 41), pygame.SRCALPHA)
+
         while True:
             # 고정된 그림: 백 점수판, 배경, 흑 점수판
             pygame.draw.rect(
@@ -108,8 +111,6 @@ class Game:
                     pos = pygame.mouse.get_pos()
                     target = self.find_mouse_pointed_space(pos)
                     if target is not None:
-                        # pressed = pygame.mouse.get_pressed()
-                        # if pressed[0]:  # 좌클릭
                         target.click(Team.BLACK)
                         if self.multiplay:
                             self.encode_udp_and_send(pos)
@@ -150,24 +151,60 @@ class Game:
             self.displaysurf.blit(self.white_baek, (700, 35))
             self.displaysurf.blit(black_score, (125, 1010))
             self.displaysurf.blit(white_score, (750, 35))
-            # from cursor import cursor_zero, cursor_zero_surface
-            # self.displaysurf.blit(cursor_zero_surface, (200, 200))
 
             # 게이지 표시
-            if self.black_gauge < 3:
+            if self.black_gauge < 3.0:
                 self.black_gauge += 1/180  # 3초에 하나씩 채워진다
-            if self.white_gauge < 3:
+            if self.white_gauge < 3.0:
                 self.white_gauge += 1/180
             self.draw_gauge()
 
             if black_5 >= 3:
-                print("Black wins!")
-                break
+                pygame.mouse.set_visible(True)
+                return "Black wins!"
             elif white_5 >= 3:
-                print("White wins!")
-                break
+                return "White wins!"
 
             self.board.update()
+
+            # 마우스 커서 표시
+            cursor_with_gauge.fill((255, 255, 255, 0))  # RGBA : totally transparent
+            gfxdraw.aatrigon(cursor_with_gauge, 20, 22, 14, 4, 26, 4, (0, 0, 255))
+            gfxdraw.aatrigon(cursor_with_gauge, 20, 22, 38, 27, 33, 36, (0, 0, 255))
+            gfxdraw.aatrigon(cursor_with_gauge, 20, 22, 7, 36, 2, 27, (0, 0, 255))
+            if 0.0 <= self.black_gauge < 1.0:
+                gfxdraw.filled_trigon(
+                    cursor_with_gauge,
+                    20, 22,
+                    round(20 - 6 * self.black_gauge), round(22 - 18 * self.black_gauge),
+                    round(20 + 6 * self.black_gauge), round(22 - 18 * self.black_gauge),
+                    (0, 0, 255)
+                )
+            elif 1.0 <= self.black_gauge < 2.0:
+                gfxdraw.filled_trigon(cursor_with_gauge, 20, 22, 14, 4, 26, 4, (0, 0, 255))
+                gfxdraw.filled_trigon(
+                    cursor_with_gauge,
+                    20, 22,
+                    round(20 + 18 * (self.black_gauge-1)), round(22 + 5 * (self.black_gauge-1)),
+                    round(20 + 13 * (self.black_gauge-1)), round(22 + 14 * (self.black_gauge-1)),
+                    (0, 0, 255)
+                )
+            elif 2.0 <= self.black_gauge < 3.0:
+                gfxdraw.filled_trigon(cursor_with_gauge, 20, 22, 14, 4, 26, 4, (0, 0, 255))
+                gfxdraw.filled_trigon(cursor_with_gauge, 20, 22, 38, 27, 33, 36, (0, 0, 255))
+                gfxdraw.filled_trigon(
+                    cursor_with_gauge,
+                    20, 22,
+                    round(20 - 13 * (self.black_gauge-2)), round(22 + 14 * (self.black_gauge-2)),
+                    round(20 - 18 * (self.black_gauge-2)), round(22 + 5 * (self.black_gauge-2)),
+                    (0, 0, 255)
+                )
+            else:  # self.black_gauge >= 3.0
+                gfxdraw.filled_trigon(cursor_with_gauge, 20, 22, 14, 4, 26, 4, (0, 0, 255))
+                gfxdraw.filled_trigon(cursor_with_gauge, 20, 22, 38, 27, 33, 36, (0, 0, 255))
+                gfxdraw.filled_trigon(cursor_with_gauge, 20, 22, 7, 36, 2, 27, (0, 0, 255))
+            self.displaysurf.blit(cursor_with_gauge, (pos[0]-21, pos[1]-21))
+
             pygame.display.update()
             self.clock.tick(Game.FPS)
 

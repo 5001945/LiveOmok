@@ -27,7 +27,7 @@ cursor_zero_strings = (               #sized 40x40
   "                        ")
 cursor_zero_surface = pygame.Surface((40, 40), flags=pygame.SRCALPHA)
 cursor_zero_surface.fill((0, 0, 0, 0))
-cursor_zero_image = pygame.image.load("cursor_0_binary.png").convert_alpha()
+cursor_zero_image = pygame.image.load("./res/cursor_0_black_transparent.png").convert_alpha()
 cursor_zero_surface.blit(cursor_zero_image, (0, 0))
 # cursor_one: pygame.Cursor = pygame.cursors.Cursor(
 #     (24, 24),
