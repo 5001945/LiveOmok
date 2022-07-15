@@ -45,6 +45,13 @@ class State(Enum):
     WHITE_RESERVED = 4
 
 
+class Validity(Enum):
+    INVALID = 0
+    RESERVE = 1
+    DENY = 2
+    CONFIRM = 3
+
+
 class Game:
     FPS = 60
 
@@ -110,7 +117,7 @@ class Game:
                     self.mouse_clicking = True
                     pos = pygame.mouse.get_pos()
                     target = self.find_mouse_pointed_space(pos)
-                    if target is not None:
+                    if (target is not None) and (target.valid(Team.BLACK) != Validity.INVALID):
                         target.click(Team.BLACK)
                         if self.multiplay:
                             self.encode_udp_and_send(pos)
@@ -238,7 +245,7 @@ class Game:
 
 
     def decode_udp_and_update(self, msg: str) -> None:
-        print(msg)
+        print("Opponent - " + msg)
         if msg.startswith("Move:"):
             # msg에는 Move 헤더와 클릭한 좌표가 들어온다. "Move:530,230"
             msg = msg[5:]
@@ -254,9 +261,11 @@ class Game:
 
     def encode_udp_and_send(self, pos_or_msg: Union[tuple[int, int], str]) -> None:
         if isinstance(pos_or_msg, tuple):
-            self.udp.send(f"Move:{pos_or_msg[0]},{pos_or_msg[1]}")
+            msg = f"Move:{pos_or_msg[0]},{pos_or_msg[1]}"
         elif isinstance(pos_or_msg, str):
-            self.udp.send(f"Chat:{pos_or_msg}")
+            msg = f"Chat:{pos_or_msg}"
+        print("Me - " + msg)
+        self.udp.send(msg)
 
 
     def find_mouse_pointed_space(self, pos: tuple[int, int]) -> Optional['Space']:
@@ -340,43 +349,60 @@ class Space:
             else:
                 raise ValueError()
 
-
-    def click(self, team: Team):
+    def valid(self, clicker_team: Team) -> Validity:
         if self.state == State.EMPTY:
-            if team == Team.BLACK:
+            if (clicker_team == Team.BLACK and self.board.game.black_gauge >= 1.0) \
+                or (clicker_team == Team.WHITE and self.board.game.white_gauge >= 1.0):
+                return Validity.RESERVE
+        elif self.state == State.BLACK_RESERVED:
+            if (clicker_team == Team.BLACK and self.board.game.black_gauge >= 1.0):
+                return Validity.CONFIRM
+            if (clicker_team == Team.WHITE and self.board.game.white_gauge >= 1.5):
+                return Validity.DENY
+        elif self.state == State.WHITE_RESERVED:
+            if (clicker_team == Team.BLACK and self.board.game.black_gauge >= 1.5):
+                return Validity.DENY
+            if (clicker_team == Team.WHITE and self.board.game.white_gauge >= 1.0):
+                return Validity.CONFIRM
+        else: return Validity.INVALID
+
+
+    def click(self, clicker_team: Team):
+        if self.state == State.EMPTY:
+            if clicker_team == Team.BLACK:
                 if self.board.game.black_gauge >= 1.0:
                     self.team = Team.BLACK
                     self.animation = StoneReservedAnimation(self)
                     self.board.game.black_gauge -= 1.0
-            elif team == Team.WHITE:
+            elif clicker_team == Team.WHITE:
                 if self.board.game.white_gauge >= 1.0:
                     self.team = Team.WHITE
                     self.animation = StoneReservedAnimation(self)
                     self.board.game.white_gauge -= 1.0
 
         elif self.state == State.BLACK_RESERVED:
-            if team == Team.BLACK:  # 흑 확정
+            if clicker_team == Team.BLACK:  # 흑 확정
                 if self.board.game.black_gauge >= 1.0:
                     self.animation = StoneDeployedAnimation(self)
                     self.board.game.black_gauge -= 1.0
-            elif team == Team.WHITE:  # 백 새치기
+            elif clicker_team == Team.WHITE:  # 백 새치기
                 if self.board.game.white_gauge >= 1.5:
                     if self.animation.current_frame > 15:
-                        self.team = team
+                        self.team = clicker_team
                         self.animation = StoneDeployedAnimation(self)
                         self.board.game.white_gauge -= 1.5
                         # self.board.game.black_gauge = min(3.0, self.board.game.black_gauge + 1.0)
                         self.board.game.black_gauge += 1.0
 
         elif self.state == State.WHITE_RESERVED:
-            if team == Team.WHITE:  # 백 확정
+            if clicker_team == Team.WHITE:  # 백 확정
                 if self.board.game.white_gauge >= 1.0:
                     self.animation = StoneDeployedAnimation(self)
                     self.board.game.white_gauge -= 1.0
-            elif team == Team.BLACK:  # 흑 새치기
+            elif clicker_team == Team.BLACK:  # 흑 새치기
                 if self.board.game.black_gauge >= 1.5:
                     if self.animation.current_frame > 15:
-                        self.team = team
+                        self.team = clicker_team
                         self.animation = StoneDeployedAnimation(self)
                         self.board.game.black_gauge -= 1.5
                         # self.board.game.white_gauge = min(3.0, self.board.game.white_gauge + 1.0)
