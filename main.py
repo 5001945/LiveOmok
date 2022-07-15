@@ -35,7 +35,7 @@ class Lobby:
                 (127, 127, 127),
                 self.multiplay_btn
             )
-            singleplay_text = self.dotum.render("한 컴퓨터에서 플레이", True, (0, 0, 0))
+            singleplay_text = self.dotum.render("연습 게임", True, (0, 0, 0))
             multiplay_text = self.dotum.render("통신 플레이", True, (0, 0, 0))
             self.displaysurf.blit(singleplay_text, (140, 115))
             self.displaysurf.blit(multiplay_text, (140, 335))

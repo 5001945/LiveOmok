@@ -23,7 +23,7 @@ for i in range(loop_num):
     draw.line([(0, i), (i, 0)], fill=color)
 
 # bg_colors = [(246 - i, 205 - i, 99 - i) for i in range(10)]
-*5/6
+
 
 #%% Draw lines
 # line_color = (47, 29, 9)
@@ -41,7 +41,7 @@ draw.line([(margin, margin + room*14), (margin + room*14, margin + room*14)], fi
 draw.line([(margin, margin), (margin, margin + room*14)], fill=bold_line_color, width=3, joint='curve')
 draw.line([(margin + room*14, margin), (margin + room*14, margin + room*14)], fill=bold_line_color, width=3, joint='curve')
 
-#%% Draw 화점 (ㅅㅂ 영어로 검색해도 안 나와)
+#%% Draw flower points (star points)
 draw.ellipse([(margin + room*3  - 3, margin + room*3  - 3), (margin + room*3  + 3, margin + room*3  + 3)], fill=line_color)
 draw.ellipse([(margin + room*11 - 3, margin + room*3  - 3), (margin + room*11 + 3, margin + room*3  + 3)], fill=line_color)
 draw.ellipse([(margin + room*3  - 3, margin + room*11 - 3), (margin + room*3  + 3, margin + room*11 + 3)], fill=line_color)

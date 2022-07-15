@@ -121,8 +121,11 @@ class Game:
                         target.click(Team.BLACK)
                         if self.multiplay:
                             self.encode_udp_and_send(pos)
-                        # elif pressed[2] and not self.multiplay:  # 우클릭 (로컬 플레이에서만)  # 로컬 플레이 잠시 비활성화
-                        #     target.click(Team.WHITE)
+                elif event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[2] and not self.multiplay:  # 우클릭 (로컬 플레이에서만)  # 연습 게임용
+                    pos = pygame.mouse.get_pos()
+                    target = self.find_mouse_pointed_space(pos)
+                    if (target is not None) and (target.valid(Team.WHITE) != Validity.INVALID):
+                        target.click(Team.WHITE)
                 elif event.type == pygame.MOUSEBUTTONUP and not left_clicked:
                     self.mouse_clicking = False
                 if event.type == QUIT:
@@ -269,7 +272,7 @@ class Game:
 
 
     def find_mouse_pointed_space(self, pos: tuple[int, int]) -> Optional['Space']:
-        target: Space = None
+        target: Optional['Space'] = None
         for row in self.board.spaces:
             for space in row:
                 if space.rect.inflate(-10, -10).collidepoint(pos):  # Taxi distance
@@ -299,7 +302,7 @@ class Board:
                         space.animation = StoneIdleAnimation(space)
 
     def count_5_connected(self) -> tuple[int, int]:
-        # 참고로 6목은 5목 2개로 본다.
+        # 참고로 6목은 5목 2개로 본다. 7목은 5목 3개로 보기 때문에 바로 이긴다.
         black_5 = 0
         white_5 = 0
         for row in self.spaces:
