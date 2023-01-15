@@ -73,8 +73,8 @@ class Game:
 
         pygame.display.set_caption("Real-time Omok3")  # 창 제목 설정
         self.displaysurf = pygame.display.set_mode((875, 1075))
-        root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # RealtimeOmok/
-        img_path = os.path.join(root, "res", "board-PIL-step.png")  # RealtimeOmok/res/board-PIL-step.png
+        root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # LiveOmok/
+        img_path = os.path.join(root, "res", "board-PIL-step.png")  # LiveOmok/res/board-PIL-step.png
         self.background = pygame.image.load(img_path)
         self.dotum = pygame.font.SysFont("malgun gothic", 30)
         # self.dotum = pygame.font.SysFont("dotumche", 30)

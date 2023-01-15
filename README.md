@@ -1,4 +1,4 @@
-# RealtimeOmok
+# LiveOmok
  Real-time based(not turn-based) Omok(Gomoku) game
 
 # TODO

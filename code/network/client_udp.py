@@ -8,7 +8,7 @@ import threading
 def connect_server(server_list='server_list.txt'):
     # find server list
     rendezvous = None
-    server_list_file = os.path.join(os.path.dirname(__file__), server_list)  # RealtimeOmok/network/server_list.txt
+    server_list_file = os.path.join(os.path.dirname(__file__), server_list)  # LiveOmok/network/server_list.txt
     with open(server_list_file, 'r') as f:
         lines = f.readlines()
         for line in lines:
