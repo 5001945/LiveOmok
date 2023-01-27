@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 
 import pygame
 from pygame.locals import *
-from pygame import gfxdraw
+# from pygame import gfxdraw
 
 if TYPE_CHECKING:
-    from .omok3 import *
+    from code.omok3.omok3 import Space  # Prevent circular import
 
 
 class Animation:

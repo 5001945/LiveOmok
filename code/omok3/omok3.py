@@ -7,10 +7,8 @@ import pygame
 from pygame import gfxdraw
 from pygame.locals import *
 
-from .animations import SpaceAnimation, StoneDeployedAnimation, StoneIdleAnimation, StoneReservedAnimation
-
-if TYPE_CHECKING:
-    from ..network.client_udp import OmokUDP
+from code.omok3.animations import SpaceAnimation, StoneDeployedAnimation, StoneIdleAnimation, StoneReservedAnimation
+from code.network.udp.client_udp import OmokUDP
 
 
 class Color(Enum):
@@ -55,7 +53,7 @@ class Validity(Enum):
 class Game:
     FPS = 60
 
-    def __init__(self, multiplay=False, udp: 'OmokUDP' = None) -> None:
+    def __init__(self, multiplay=False, udp: OmokUDP = None) -> None:
         self.multiplay = multiplay
         if self.multiplay:
             self.udp = udp
@@ -63,7 +61,7 @@ class Game:
             self.udp.start_listen()
             self.opponent_move: tuple[bool, tuple[int, int]] = (False, (0, 0))
             self.opponent_chat: str = ""
-            self.encode_udp_and_send("Hello!")
+            self.encode_udp_and_send("HELLO")
             
         pygame.init()
         self.clock = pygame.time.Clock()
@@ -71,7 +69,7 @@ class Game:
         pygame.mouse.set_visible(False)
         self.mouse_clicking = False
 
-        pygame.display.set_caption("Real-time Omok3")  # 창 제목 설정
+        pygame.display.set_caption("Real-time LiveOmok3")  # 창 제목 설정
         self.displaysurf = pygame.display.set_mode((875, 1075))
         root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # LiveOmok/
         img_path = os.path.join(root, "res", "board-PIL-step.png")  # LiveOmok/res/board-PIL-step.png
@@ -86,6 +84,23 @@ class Game:
         self.white_gauge = 0.0
 
         self.displaysurf.blit(self.background, (0, 0))
+
+
+    def event_lclick(self, click_pos: tuple[int, int]):
+        target = self.find_mouse_pointed_space(click_pos)
+        if (target is not None) and (target.valid(Team.BLACK) != Validity.INVALID):
+            target.click(Team.BLACK)
+            if self.multiplay:
+                self.encode_udp_and_send(click_pos)
+
+
+    def event_rclick(self, click_pos: tuple[int, int]):
+        if self.multiplay:
+            pass
+        else:
+            target = self.find_mouse_pointed_space(click_pos)
+            if (target is not None) and (target.valid(Team.WHITE) != Validity.INVALID):
+                target.click(Team.WHITE)
 
 
     def loop(self) -> str:
@@ -116,16 +131,10 @@ class Game:
                         continue
                     self.mouse_clicking = True
                     pos = pygame.mouse.get_pos()
-                    target = self.find_mouse_pointed_space(pos)
-                    if (target is not None) and (target.valid(Team.BLACK) != Validity.INVALID):
-                        target.click(Team.BLACK)
-                        if self.multiplay:
-                            self.encode_udp_and_send(pos)
-                elif event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[2] and not self.multiplay:  # 우클릭 (로컬 플레이에서만)  # 연습 게임용
+                    self.event_lclick(pos)
+                elif event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[2]:
                     pos = pygame.mouse.get_pos()
-                    target = self.find_mouse_pointed_space(pos)
-                    if (target is not None) and (target.valid(Team.WHITE) != Validity.INVALID):
-                        target.click(Team.WHITE)
+                    self.event_rclick(pos)
                 elif event.type == pygame.MOUSEBUTTONUP and not left_clicked:
                     self.mouse_clicking = False
                 if event.type == QUIT:

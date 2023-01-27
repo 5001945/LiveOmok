@@ -5,7 +5,7 @@ import os.path
 import threading
 
 
-def connect_server(server_list='server_list.txt'):
+def connect_server(server_list='../server_list.txt'):
     # find server list
     rendezvous = None
     server_list_file = os.path.join(os.path.dirname(__file__), server_list)  # LiveOmok/network/server_list.txt

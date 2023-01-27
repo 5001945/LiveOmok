@@ -4,7 +4,7 @@ import sys
 import pygame
 
 from code.omok3 import omok3
-from code.network import client_udp
+from code.network.udp import client_udp
 
 class Lobby:
     FPS = 30
