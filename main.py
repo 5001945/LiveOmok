@@ -46,7 +46,7 @@ class Lobby:
                     if self.singleplay_btn.collidepoint(pos):
                         self.do_singleplay()
                         # pygame.display.get_surface().
-                        print("현재는 싱글플레이를 임시로 비활성화한 상태입니다.")
+                        print("현재는 멀티플레이를 임시로 비활성화한 상태입니다.")
                         # pygame.quit()
                         # sys.exit()
                         self.displaysurf = pygame.display.set_mode((640, 480))

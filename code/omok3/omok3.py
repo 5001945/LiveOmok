@@ -62,7 +62,7 @@ class Game:
             self.opponent_move: tuple[bool, tuple[int, int]] = (False, (0, 0))
             self.opponent_chat: str = ""
             self.encode_udp_and_send("HELLO")
-            
+
         pygame.init()
         self.clock = pygame.time.Clock()
         
@@ -324,7 +324,7 @@ class Board:
 
 class Space:
     
-    def __init__(self, board: Board, x, y) -> None:
+    def __init__(self, board: Board, x: int, y: int) -> None:
         self.board = board
         self.x = x  # 0-14
         self.y = y  # 0-14
@@ -339,7 +339,7 @@ class Space:
         return f"Space('{col}{row}')"
 
     @property
-    def rect(self) -> Rect:
+    def rect(self) -> pygame.Rect:
         return pygame.Rect(56 + 51 * self.x, 156 + 51 * self.y, 51, 51)
 
     @property
