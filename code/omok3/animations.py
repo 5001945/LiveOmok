@@ -62,8 +62,10 @@ class StoneIdleAnimation(Animation):
 
 class StoneReservedAnimation(Animation):
     # 바둑알을 놓을 때 테두리를 따라 한 바퀴 휠을 채운다.
+    TOTAL_FRAME = 90
+
     def __init__(self, parent: 'Space') -> None:
-        super().__init__(parent, total_frame=60, infinite_loop=False)
+        super().__init__(parent, total_frame=self.TOTAL_FRAME, infinite_loop=False)
 
     def _draw_frame(self):
         return pygame.draw.arc(

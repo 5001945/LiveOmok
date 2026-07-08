@@ -19,8 +19,15 @@ def connect_server(server_list='server_list.txt'):
         raise FileNotFoundError(server_list + " is empty.")
 
     # connect to rendezvous server
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
-    sock.bind(('0.0.0.0', 56456))
+    for port in range(56456, 60000):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+        try:
+            sock.bind(('0.0.0.0', port))
+            break
+        except OSError:
+            sock.close()
+    else:
+        raise RuntimeError("Failed to bind to any available port.")
     sock.sendto(b'0', rendezvous)
 
     while True:
