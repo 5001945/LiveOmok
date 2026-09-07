@@ -752,13 +752,7 @@ class Board:
     def update(self) -> None:
         for row in self.spaces:
             for space in row:
-                try:
-                    next(space.animation.play())
-                except StopIteration as e:
-                    if isinstance(space.animation, StoneReservedAnimation):
-                        space.animation = StoneDeployedAnimation(space)
-                    elif isinstance(space.animation, StoneDeployedAnimation):
-                        space.animation = StoneIdleAnimation(space)
+                space.update()
 
     def count_5_connected(self) -> tuple[int, int]:
         # 참고로 6목은 5목 2개로 본다. 7목은 5목 3개로 보기 때문에 바로 이긴다.
@@ -779,14 +773,35 @@ class Space:
         self.x = x  # 0-14
         self.y = y  # 0-14
         self.team = Team.NONE
-        # self.team = Team.BLACK
-        self.animation = SpaceAnimation(self)
-        # self.animation = StoneIdleAnimation(self)
+        self._animation = SpaceAnimation(self)
+        self.coroutine = None
+
+    @property
+    def animation(self) -> SpaceAnimation:
+        return self._animation
+
+    @animation.setter
+    def animation(self, animation: SpaceAnimation) -> None:
+        self._animation = animation
+        if self.coroutine is not None:
+            self.coroutine.close()
+            self.coroutine = None
 
     def __repr__(self) -> str:
         row = str(15 - self.y)
         col = "ABCDEFGHIJKLMNOP"[self.x]
         return f"Space('{col}{row}')"
+
+    def update(self) -> None:
+        if self.coroutine is None:
+            self.coroutine = self.animation.play()
+        try:
+            next(self.coroutine)
+        except StopIteration as e:
+            if isinstance(self.animation, StoneReservedAnimation):
+                self.animation = StoneDeployedAnimation(self)
+            elif isinstance(self.animation, StoneDeployedAnimation):
+                self.animation = StoneIdleAnimation(self)
 
     @property
     def rect(self) -> pygame.Rect:

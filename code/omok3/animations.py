@@ -1,5 +1,5 @@
 from math import pi, floor
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator, Any
 
 import pygame
 from pygame.locals import *
@@ -16,18 +16,18 @@ class Animation:
         self.infinite_loop = infinite_loop
         self.current_frame = 0
 
-    def play(self):
-        # raise NotImplementedError()
-        if self.current_frame >= self.total_frame:
-            if self.infinite_loop:
-                self.current_frame = 0
-            else:
-                return "Animation ends"
+    def play(self) -> Generator[Any, None, str]:
+        while True:
+            if self.current_frame >= self.total_frame:
+                if self.infinite_loop:
+                    self.current_frame = 0
+                else:
+                    return "Animation ends"
 
-        self.current_frame += 1
-        yield self._draw_frame()
+            self.current_frame += 1
+            yield self._draw_frame()
 
-    def _draw_frame(self):
+    def _draw_frame(self) -> Any:
         return None
 
     @property
@@ -44,7 +44,7 @@ class StoneIdleAnimation(Animation):
     def __init__(self, parent: 'Space') -> None:
         super().__init__(parent, total_frame=1, infinite_loop=True)
 
-    def _draw_frame(self):
+    def _draw_frame(self) -> Any:
         return pygame.draw.circle(
             self.parent.board.game.displaysurf,
             self.parent.team.color(),

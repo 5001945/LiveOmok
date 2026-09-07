@@ -41,16 +41,12 @@ Other OSes may work, but I haven't tested them.
 ## Conda
 ```
 conda env create -n liveomok python=3.12
+conda activate liveomok
 pip install pygame pillow numpy
 ```
 
-## Pipenv
-```
-pipenv install
-```
 
-
-# Running the game
+# Running the game (Singleplayer)
 
 ## Conda
 ```
@@ -58,7 +54,14 @@ conda activate liveomok
 python main.py
 ```
 
-## Pipenv
-```
-pipenv run python main.py
-```
+
+# Running the game (Multiplayer)
+
+## Conda
+1. Double click `code\network\udp\server_udp.bat`.
+2. Launch two clients.  
+    ```
+    conda activate liveomok
+    python main.py
+    ```
+3. Click "통신 플레이"-"친구와 대전", then type the password.
